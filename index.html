@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogicGate: Vault Breaker v3 — Offline Classroom &amp; Assessment Edition</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-dark: #0b1120;
+    --border: #334155;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --purple: #a855f7;
+  }
+  * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  header {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--border);
+  }
+  .brand-level { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .brand-badge {
+    background: linear-gradient(135deg, #0284c7, #4f46e5);
+    padding: 4px 9px; border-radius: 6px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.3px;
+  }
+  select.level-select, select.tier-select, input.ui-input, textarea.ui-textarea {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    padding: 5px 9px; border-radius: 6px; font-weight: 600; font-size: 0.83rem;
+  }
+  select.level-select { border-color: var(--accent); max-width: 280px; }
+  .hud-stats { display: flex; gap: 7px; font-weight: 600; font-size: 0.8rem; flex-wrap: wrap; align-items: center; }
+  .stat-box { background: var(--bg); padding: 4px 9px; border-radius: 6px; border: 1px solid var(--border); display: flex; align-items: center; gap: 5px; }
+  .ok { color: var(--green); }
+  .bad { color: var(--red); }
+  .warn { color: var(--amber); }
+
+  main { display: grid; grid-template-columns: 1fr 435px; flex: 1; overflow: hidden; }
+
+  .board-area { display: flex; flex-direction: column; padding: 9px 11px; gap: 7px; overflow: hidden; }
+  .toolbar { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  button {
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    padding: 5px 8px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.77rem;
+    transition: all 0.14s;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: 0.38; cursor: not-allowed; filter: grayscale(0.7); }
+  button.active { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+  button.tt-btn { background: #0369a1; border-color: #38bdf8; color: #ffffff; }
+  button.sol-btn { background: #312e81; border-color: #818cf8; color: #e0e7ff; }
+  button.prac-btn { background: #581c87; border-color: #c084fc; color: #f3e8ff; }
+  button.hub-btn { background: #78350f; border-color: #f59e0b; color: #fef3c7; }
+  button.exp-btn { background: #065f46; border-color: #34d399; color: #ecfdf5; }
+  button.run-btn { background: var(--green); color: #052e16; border: none; margin-left: auto; font-size: 0.82rem; padding: 6px 12px; }
+  button.run-btn:hover { filter: brightness(1.08); }
+  button.reset-btn { background: #475569; border: none; }
+
+  .restriction-bar {
+    background: var(--panel-dark); border: 1px solid var(--border); border-radius: 7px;
+    padding: 5px 10px; font-size: 0.78rem; color: #cbd5e1;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  .pill {
+    display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+  }
+  .pill-ban { background: rgba(239, 68, 68, 0.2); border: 1px solid var(--red); color: #fca5a5; }
+  .pill-ok { background: rgba(34, 197, 94, 0.18); border: 1px solid var(--green); color: #86efac; }
+  .pill-test { background: rgba(245, 158, 11, 0.24); border: 1px solid var(--amber); color: #fde68a; }
+
+  .canvas-wrap {
+    flex: 1; background: #090d16; border: 1px solid var(--border); border-radius: 8px;
+    display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden;
+  }
+  canvas { background: #0f172a; border-radius: 4px; cursor: crosshair; max-width: 100%; max-height: 100%; }
+
+  .side-panel {
+    background: var(--panel); border-left: 1px solid var(--border);
+    padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto;
+  }
+  .side-panel h2 { margin: 0; font-size: 0.94rem; color: var(--accent); display: flex; justify-content: space-between; align-items: center; }
+  .briefing { font-size: 0.79rem; color: #cbd5e1; line-height: 1.4; background: var(--bg); padding: 7px 9px; border-radius: 6px; border: 1px solid var(--border); }
+  .expr-line { font-family: monospace; font-size: 0.76rem; color: var(--amber); margin-top: 4px; }
+
+  .tt-card {
+    background: var(--panel-dark); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px;
+  }
+  .tt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .tt-header strong { font-size: 0.82rem; color: var(--amber); }
+  table.tt-table, table.hs-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 0.75rem; }
+  table.tt-table th, table.tt-table td, table.hs-table th, table.hs-table td {
+    border: 1px solid #1e293b; padding: 3px 5px; text-align: center;
+  }
+  table.tt-table th, table.hs-table th { background: #1e293b; color: #e2e8f0; }
+  table.tt-table tr.tt-row { cursor: pointer; }
+  table.tt-table tr.tt-row:hover { background: rgba(56, 189, 248, 0.12); }
+  table.tt-table tr.tt-active { background: rgba(250, 204, 21, 0.22); outline: 1px solid #facc15; }
+  table.tt-table tr.tt-fail { background: rgba(239, 68, 68, 0.25); outline: 1px solid var(--red); }
+  .bit-1 { color: #4ade80; font-weight: 700; }
+  .bit-0 { color: #94a3b8; }
+
+  .ref-box {
+    background: var(--panel-dark); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; font-size: 0.73rem;
+    font-family: monospace; color: #cbd5e1; line-height: 1.38;
+  }
+  .ref-box strong { color: var(--accent); font-family: 'Segoe UI', sans-serif; display: block; margin-bottom: 2px; }
+
+  .console-log {
+    flex: 1; min-height: 76px; background: #020617; border: 1px solid var(--border); border-radius: 6px;
+    padding: 7px; font-family: monospace; font-size: 0.75rem; overflow-y: auto; line-height: 1.38; color: #cbd5e1;
+  }
+  .log-ok { color: var(--green); }
+  .log-err { color: var(--red); }
+  .log-info { color: var(--accent); }
+  .log-warn { color: var(--amber); }
+
+  /* Modals */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.84);
+    justify-content: center; align-items: center; z-index: 60; padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    max-width: 780px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 16px; background: var(--panel-dark); border-bottom: 1px solid var(--border);
+  }
+  .modal-header h3 { margin: 0; font-size: 0.96rem; color: var(--accent); }
+  .modal-body { padding: 13px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.83rem; }
+  .modal-footer {
+    padding: 10px 16px; background: var(--panel-dark); border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 0.77rem; color: var(--muted); font-weight: 600; }
+  .step-item {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 11px; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .step-num {
+    background: var(--accent); color: #0f172a; font-weight: 800; font-size: 0.78rem;
+    width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .step-content strong { display: block; font-size: 0.85rem; margin-bottom: 2px; color: #f8fafc; }
+  .step-content p { margin: 0; font-size: 0.79rem; color: var(--muted); line-height: 1.4; }
+  .offline-tag { font-size: 0.72rem; color: #4ade80; border: 1px solid #166534; background: #052e16; padding: 2px 7px; border-radius: 999px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-level">
+    <span class="brand-badge">LogicGate v3</span>
+    <span class="offline-tag" title="Zero external network dependencies">OFFLINE LAN</span>
+    <select id="levelSelector" class="level-select" onchange="LevelController.loadLevel(this.value)"></select>
+    <button class="prac-btn" id="practiceBtn" onclick="PracticeGenerator.generateRandomVault()">🎲 Practice Vault</button>
+    <select id="practiceTierSelect" class="tier-select" title="Practice Difficulty Tier">
+      <option value="1">Tier 1 (Core)</option>
+      <option value="2">Tier 2 (Compound)</option>
+      <option value="3">Tier 3 (Restricted)</option>
+    </select>
+  </div>
+
+  <div class="hud-stats">
+    <div class="stat-box" style="cursor:pointer;" onclick="StudentSession.openLoginModal()" title="Click to edit Learner Details">
+      👤 <span id="hudStudentInfo">Not Signed In</span>
+    </div>
+    <div class="stat-box">🏆 Score: <span id="hudTotalScore" class="ok">0</span></div>
+    <div class="stat-box">⏱ <span id="hudTimer">00:00</span></div>
+    <div class="stat-box">Gates: <span id="gateCountDisplay" class="ok">0</span>/<span id="gateLimitDisplay">0</span></div>
+    <div class="stat-box">Vault: <span id="vaultStatusDisplay" class="bad">LOCKED (0)</span></div>
+  </div>
+</header>
+
+<main>
+  <section class="board-area">
+    <div class="toolbar">
+      <button class="tool-btn active" data-tool="wire">🔌 Wire</button>
+      <button class="tool-btn" data-tool="delete">🗑 Delete</button>
+      <button class="tool-btn gate-btn" data-tool="AND">AND</button>
+      <button class="tool-btn gate-btn" data-tool="OR">OR</button>
+      <button class="tool-btn gate-btn" data-tool="NOT">NOT</button>
+      <button class="tool-btn gate-btn" data-tool="XOR">XOR</button>
+      <button class="tool-btn gate-btn" data-tool="NAND">NAND</button>
+      <button class="tool-btn gate-btn" data-tool="NOR">NOR</button>
+      <button class="tt-btn" onclick="TruthEngine.runSimulationSweep()">📊 Sweep Table</button>
+      <button class="reset-btn" onclick="LevelController.resetLevel()">Clear</button>
+      <button class="sol-btn" id="showSolutionBtn" onclick="ModalUI.openSolution()">💡 Show Solution</button>
+      <button class="exp-btn" onclick="ExportManager.openExportModal()">📤 Export Results</button>
+      <button id="editorNavBtn" onclick="LevelEditor.openEditor()">🛠 Editor</button>
+      <button onclick="ArtRegistry.openArtModal()">🎨 Art</button>
+      <button class="hub-btn" onclick="TeacherHub.openHub()">🏫 Teacher Hub</button>
+      <button class="run-btn" onclick="LevelController.verifyVault()">🔓 Test Vault Lock</button>
+    </div>
+
+    <div class="restriction-bar">
+      <div id="restrictionInfo">Allowed Gates: All</div>
+      <div id="modeBadgeArea"></div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="circuitCanvas" width="760" height="445"></canvas>
+    </div>
+  </section>
+
+  <aside class="side-panel">
+    <h2>
+      <span>Vault Specification</span>
+      <span id="levelPointsTag" style="font-size:0.78rem; color:var(--green);">Base: 100 pts</span>
+    </h2>
+    <div class="briefing">
+      <div id="briefingBox"></div>
+      <div id="targetExprBox" class="expr-line"></div>
+      <div id="liveExprBox" class="expr-line" style="color:#38bdf8;"></div>
+    </div>
+
+    <div class="tt-card">
+      <div class="tt-header">
+        <strong>Full Truth Table Verification (<span id="ttRowCount">4</span> states)</strong>
+        <span style="font-size:0.72rem; color:var(--muted);">Click row to test</span>
+      </div>
+      <table class="tt-table" id="truthTable"></table>
+    </div>
+
+    <div class="ref-box">
+      <strong>Boolean Gate Reference (CAPS &amp; Cambridge)</strong>
+      <div>AND  : 1 only if ALL inputs = 1  | NAND : 0 only if ALL inputs = 1</div>
+      <div>OR   : 1 if ANY input = 1       | NOR  : 1 only if ALL inputs = 0</div>
+      <div>NOT  : inverts 1 input (0↔1)    | XOR  : 1 if inputs DIFFER</div>
+    </div>
+
+    <div class="console-log" id="consoleLog"></div>
+  </aside>
+</main>
+
+<!-- Student Sign-In Modal -->
+<div id="loginModal" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal-card" style="max-width:460px;">
+    <div class="modal-header">
+      <h3>Learner Sign-In (Offline Session)</h3>
+    </div>
+    <div class="modal-body">
+      <p style="margin:0; color:var(--muted);">Enter your <strong>5 or 6-digit Admin Number</strong> and details before starting. All scores are stored locally on this browser and exported at the end of class.</p>
+      <div class="form-group">
+        <label>Admin Number (5–6 digits, e.g. 104829) *</label>
+        <input id="inputAdminNo" class="ui-input" type="text" maxlength="6" placeholder="104829" />
+      </div>
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input id="inputFullName" class="ui-input" type="text" placeholder="e.g. Thabo Ndlovu" />
+      </div>
+      <div class="form-group">
+        <label>Class / Grade Group *</label>
+        <input id="inputClassGroup" class="ui-input" type="text" placeholder="e.g. 9A" />
+      </div>
+      <div id="loginError" class="bad" style="font-size:0.78rem; min-height:16px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="run-btn" style="margin-left:0;" onclick="StudentSession.saveProfile()">Start Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- Show Solution Modal -->
+<div id="solutionModal" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="solutionTitle">Vault Walkthrough</h3>
+      <button onclick="ModalUI.close('solutionModal')">✕ Close</button>
+    </div>
+    <div id="solutionSteps" class="modal-body"></div>
+    <div class="modal-footer">
+      <button class="sol-btn" onclick="ModalUI.close('solutionModal')">Back to Circuit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Student Export Modal (Collection Setup C) -->
+<div id="exportModal" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>📤 Export Learner Results (Collection Setup C)</h3>
+      <button onclick="ModalUI.close('exportModal')">✕ Close</button>
+    </div>
+    <div class="modal-body">
+      <div id="exportSummaryBanner" class="briefing"></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="exp-btn" onclick="ExportManager.downloadJSON()">⬇ Download .JSON Receipt</button>
+        <button class="tt-btn" onclick="ExportManager.downloadCSV()">⬇ Download .CSV Row</button>
+        <button onclick="ExportManager.copyReceiptText()">📋 Copy Receipt Text</button>
+      </div>
+      <div class="form-group">
+        <label>Generated Offline Assessment Receipt (JSON)</label>
+        <textarea id="exportJsonPreview" class="ui-textarea" rows="10" readonly style="font-family:monospace; font-size:0.75rem;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="ModalUI.close('exportModal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Teacher Hub Modal -->
+<div id="teacherHubModal" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal-card" style="max-width:860px;">
+    <div class="modal-header">
+      <h3>🏫 Teacher Hub — Assessment Control &amp; Class Marks Aggregator</h3>
+      <button onclick="ModalUI.close('teacherHubModal')">✕ Close</button>
+    </div>
+    <div class="modal-body" id="teacherPinGate">
+      <p style="margin:0;">Enter Teacher PIN to unlock Assessment Mode controls and Class High-Score Aggregation (Default PIN: <strong>1234</strong>).</p>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="teacherPinInput" class="ui-input" type="password" placeholder="Teacher PIN" style="width:160px;" />
+        <button class="hub-btn" onclick="TeacherHub.unlockHub()">Unlock Hub</button>
+      </div>
+      <div id="teacherPinError" class="bad" style="font-size:0.78rem;"></div>
+    </div>
+
+    <div class="modal-body" id="teacherHubContent" style="display:none;">
+      <div class="briefing" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <strong>🔒 Formal Assessment / Test Mode</strong>
+          <div style="color:var(--muted); font-size:0.76rem;">Disables "Show Solution", Practice Vault generator, and Level Editor during tests.</div>
+        </div>
+        <label style="display:flex; align-items:center; gap:7px; font-weight:700; cursor:pointer;">
+          <input type="checkbox" id="assessmentModeToggle" onchange="TeacherHub.toggleAssessmentMode(this.checked)" />
+          <span>Enable Test Mode</span>
+        </label>
+      </div>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <label class="exp-btn" style="padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.78rem;">
+          📂 Import Student .JSON Files (Multiple)
+          <input type="file" id="hubFileInput" accept=".json" multiple style="display:none;" onchange="TeacherHub.importFiles(event)" />
+        </label>
+        <button onclick="TeacherHub.loadCurrentLearnerIntoHub()">➕ Add Current Browser Learner</button>
+        <button class="tt-btn" onclick="TeacherHub.exportMasterCSV()">⬇ Export Class Markbook (.CSV)</button>
+        <button class="reset-btn" onclick="TeacherHub.clearHubRecords()">Clear Table</button>
+      </div>
+
+      <div class="form-group">
+        <label>Or Paste Student JSON Receipt Text &amp; Click Import</label>
+        <div style="display:flex; gap:6px;">
+          <input id="hubPasteInput" class="ui-input" style="flex:1;" placeholder='Paste {"schemaVersion":"1.0", ...} here' />
+          <button onclick="TeacherHub.importPastedJson()">Import Text</button>
+        </div>
+      </div>
+
+      <div style="max-height:260px; overflow:auto; border:1px solid var(--border); border-radius:6px;">
+        <table class="hs-table" id="teacherScoresTable">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Admin No</th>
+              <th>Learner Name</th>
+              <th>Class</th>
+              <th>Total Score</th>
+              <th>Vaults</th>
+              <th>Failed Tries</th>
+              <th>Time (s)</th>
+              <th>Hints Used</th>
+              <th>Mode</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="ModalUI.close('teacherHubModal')">Close Hub</button>
+    </div>
+  </div>
+</div>
+
+<!-- Level Editor Modal -->
+<div id="editorModal" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>🛠 Level &amp; Gate-Restriction Editor</h3>
+      <button onclick="ModalUI.close('editorModal')">✕ Close</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Level Title</label>
+          <input id="edTitle" class="ui-input" type="text" />
+        </div>
+        <div class="form-group">
+          <label>Base Score (Points)</label>
+          <input id="edBaseScore" class="ui-input" type="number" min="50" step="25" />
+        </div>
+        <div class="form-group">
+          <label>Max Gates Allowed</label>
+          <input id="edMaxGates" class="ui-input" type="number" min="1" max="10" />
+        </div>
+        <div class="form-group">
+          <label>Par Time (Seconds)</label>
+          <input id="edParSeconds" class="ui-input" type="number" min="15" step="15" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Briefing Instructions</label>
+        <textarea id="edBriefing" class="ui-textarea" rows="2"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Disabled Gates (Checked gates are BANNED in this level)</label>
+        <div id="edDisabledGatesBox" style="display:flex; gap:12px; flex-wrap:wrap;"></div>
+      </div>
+      <div class="form-group">
+        <label>Target Outputs (Comma-separated 0/1 for all 2^n rows, e.g. 0,0,0,1)</label>
+        <input id="edTargetOutputs" class="ui-input" type="text" />
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="run-btn" style="margin-left:0;" onclick="LevelEditor.applyChanges()">Apply to Current Level</button>
+        <button class="tt-btn" onclick="LevelEditor.exportLevelJson()">📋 Copy Level JSON</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="ModalUI.close('editorModal')">Close Editor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Offline Art & Background Replacement Modal -->
+<div id="artModal" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal-card" style="max-width:540px;">
+    <div class="modal-header">
+      <h3>🎨 Offline Art &amp; Sprite Customizer</h3>
+      <button onclick="ModalUI.close('artModal')">✕ Close</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin:0; color:var(--muted);">Upload local image files from your computer (converted offline to local Data URLs). Any unset or invalid image falls back cleanly to built-in vector graphics.</p>
+      <div class="form-group">
+        <label>Vault Canvas Background (Local Image File)</label>
+        <input type="file" accept="image/*" onchange="ArtRegistry.uploadLocalAsset('background', event)" />
+      </div>
+      <div class="form-group">
+        <label>Input Sensor Node Sprite (Local Image File)</label>
+        <input type="file" accept="image/*" onchange="ArtRegistry.uploadLocalAsset('input', event)" />
+      </div>
+      <div class="form-group">
+        <label>Vault Output Lock Sprite (Local Image File)</label>
+        <input type="file" accept="image/*" onchange="ArtRegistry.uploadLocalAsset('output', event)" />
+      </div>
+      <div class="form-group">
+        <label>Logic Gate Node Sprite (Local Image File)</label>
+        <input type="file" accept="image/*" onchange="ArtRegistry.uploadLocalAsset('gate', event)" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="reset-btn" onclick="ArtRegistry.resetArt()">Reset Default Vector Art</button>
+      <button onclick="ModalUI.close('artModal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   MODULE 1: OFFLINE GUARD & ASSET REGISTRY
+   Enforces zero external requests and manages local sprite/background overrides.
+   ============================================================================ */
+const OfflineGuard = (() => {
+  function enforce() {
+    // Block external network fetches at runtime to guarantee 100% offline LAN behavior
+    if (typeof window.fetch === 'function') {
+      const origFetch = window.fetch.bind(window);
+      window.fetch = function(resource, init) {
+        const url = typeof resource === 'string' ? resource : (resource && resource.url) || '';
+        if (/^https?:\/\//i.test(url) && !url.startsWith(window.location.origin)) {
+          console.warn('[OfflineGuard] Blocked external request:', url);
+          return Promise.reject(new Error('External network access disabled in Offline Mode.'));
+        }
+        return origFetch(resource, init);
+      };
+    }
+  }
+  return { enforce };
+})();
+
+const ArtRegistry = (() => {
+  const images = { background: null, input: null, output: null, gate: null };
+
+  function uploadLocalAsset(slot, event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        images[slot] = img;
+        ConsoleLogger.log(`Loaded local offline sprite for "${slot}".`, 'log-ok');
+        CanvasView.draw();
+      };
+      img.onerror = () => {
+        images[slot] = null;
+        ConsoleLogger.log(`Invalid image file for "${slot}". Using vector fallback.`, 'log-err');
+      };
+      img.src = reader.result; // Local Data URL only
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function resetArt() {
+    Object.keys(images).forEach(k => { images[k] = null; });
+    ConsoleLogger.log('Reset all artwork to built-in offline vector graphics.', 'log-info');
+    CanvasView.draw();
+  }
+
+  function openArtModal() { ModalUI.open('artModal'); }
+
+  return { images, uploadLocalAsset, resetArt, openArtModal };
+})();
+
+/* ============================================================================
+   MODULE 2: SCAFFOLDED LEVELS & SCHEMA
+   6 progressively scaffolded vaults aligned to SA Coding & Robotics + Cambridge CS.
+   ============================================================================ */
+const GATE_TYPES = ['AND', 'OR', 'NOT', 'XOR', 'NAND', 'NOR'];
+
+const LEVELS = [
+  {
+    id: 1,
+    tier: 1,
+    curriculumTag: 'Tier 1 • CAPS Grade 8-9 / Cambridge Core',
+    title: 'Vault 1: Dual Keycard Lock (AND)',
+    briefing: 'Both KEYCARD_A and BADGE_B must be 1 to unlock VAULT_BOLT. Only row (1, 1) in the truth table outputs 1.',
+    baseScore: 100,
+    parSeconds: 60,
+    maxGates: 2,
+    disabledGates: ['NOT', 'XOR', 'NAND', 'NOR'],
+    targetExpression: 'KEYCARD_A AND BADGE_B',
+    targetOutputs: [0, 0, 0, 1],
+    nodes: [
+      { id: 'in_a',  type: 'input',  label: 'KEYCARD_A',  x: 130, y: 140, val: 0 },
+      { id: 'in_b',  type: 'input',  label: 'BADGE_B',    x: 130, y: 310, val: 0 },
+      { id: 'out_1', type: 'output', label: 'VAULT_BOLT', x: 610, y: 225, val: 0 }
+    ],
+    solutionSteps: [
+      { title: 'Place an AND gate', detail: 'Select "AND" in the toolbar and click near the center of the board (370, 225).' },
+      { title: 'Wire inputs to AND', detail: 'Use "🔌 Wire" to connect KEYCARD_A → AND and BADGE_B → AND.' },
+      { title: 'Wire AND to VAULT_BOLT', detail: 'Connect AND → VAULT_BOLT and click "🔓 Test Vault Lock" to verify all 4 truth table rows.' }
+    ]
+  },
+  {
+    id: 2,
+    tier: 1,
+    curriculumTag: 'Tier 1 • CAPS Grade 8-9 / Cambridge Core',
+    title: 'Vault 2: Night Guard Override (NOT + OR)',
+    briefing: 'INNER_DOOR unlocks (1) when OVERRIDE_KEY is 1 OR when NIGHT_GUARD is off (0). Invert NIGHT_GUARD with NOT, then combine with OR.',
+    baseScore: 150,
+    parSeconds: 90,
+    maxGates: 3,
+    disabledGates: ['XOR', 'NAND', 'NOR'],
+    targetExpression: 'OVERRIDE_KEY OR (NOT NIGHT_GUARD)',
+    targetOutputs: [1, 0, 1, 1],
+    nodes: [
+      { id: 'in_a',  type: 'input',  label: 'OVERRIDE_KEY', x: 130, y: 130, val: 0 },
+      { id: 'in_b',  type: 'input',  label: 'NIGHT_GUARD',  x: 130, y: 320, val: 1 },
+      { id: 'out_1', type: 'output', label: 'INNER_DOOR',   x: 610, y: 225, val: 0 }
+    ],
+    solutionSteps: [
+      { title: 'Place NOT and OR gates', detail: 'Place a NOT gate near (280, 320) and an OR gate near (450, 225).' },
+      { title: 'Invert NIGHT_GUARD', detail: 'Wire NIGHT_GUARD → NOT, then wire NOT → OR.' },
+      { title: 'Connect OVERRIDE_KEY and Output', detail: 'Wire OVERRIDE_KEY → OR and OR → INNER_DOOR, then click "🔓 Test Vault Lock".' }
+    ]
+  },
+  {
+    id: 3,
+    tier: 2,
+    curriculumTag: 'Tier 2 • 3-Input Compound Logic',
+    title: 'Vault 3: Laser Grid Disarm (XOR + AND)',
+    briefing: 'CORE_VAULT unlocks (1) when LASER_1 and LASER_2 have DIFFERENT states (XOR = 1) AND MASTER_KEY is active (1).',
+    baseScore: 200,
+    parSeconds: 120,
+    maxGates: 3,
+    disabledGates: ['NAND', 'NOR'],
+    targetExpression: '(LASER_1 XOR LASER_2) AND MASTER_KEY',
+    targetOutputs: [0, 0, 0, 1, 0, 1, 0, 0],
+    nodes: [
+      { id: 'in_a',  type: 'input',  label: 'LASER_1',    x: 130, y: 110, val: 1 },
+      { id: 'in_b',  type: 'input',  label: 'LASER_2',    x: 130, y: 225, val: 0 },
+      { id: 'in_c',  type: 'input',  label: 'MASTER_KEY', x: 130, y: 340, val: 1 },
+      { id: 'out_1', type: 'output', label: 'CORE_VAULT', x: 610, y: 225, val: 0 }
+    ],
+    solutionSteps: [
+      { title: 'Place XOR and AND gates', detail: 'Place XOR at (310, 165) and AND at (470, 225).' },
+      { title: 'Compare Lasers with XOR', detail: 'Wire LASER_1 → XOR and LASER_2 → XOR.' },
+      { title: 'Combine with MASTER_KEY', detail: 'Wire XOR → AND, MASTER_KEY → AND, and AND → CORE_VAULT.' }
+    ]
+  },
+  {
+    id: 4,
+    tier: 2,
+    curriculumTag: 'Tier 2 • Cambridge Compound Gates',
+    title: 'Vault 4: Silent Alarm Interlock (NOR + AND)',
+    briefing: 'QUIET_VAULT opens (1) only when BOTH MOTION_1 and MOTION_2 are 0 (via NOR) AND TECH_PASS is 1.',
+    baseScore: 250,
+    parSeconds: 135,
+    maxGates: 3,
+    disabledGates: ['OR', 'XOR'],
+    targetExpression: '(MOTION_1 NOR MOTION_2) AND TECH_PASS',
+    targetOutputs: [0, 1, 0, 0, 0, 0, 0, 0],
+    nodes: [
+      { id: 'in_a',  type: 'input',  label: 'MOTION_1',    x: 130, y: 110, val: 0 },
+      { id: 'in_b',  type: 'input',  label: 'MOTION_2',    x: 130, y: 225, val: 0 },
+      { id: 'in_c',  type: 'input',  label: 'TECH_PASS',   x: 130, y: 340, val: 1 },
+      { id: 'out_1', type: 'output', label: 'QUIET_VAULT', x: 610, y: 225, val: 0 }
+    ],
+    solutionSteps: [
+      { title: 'Place NOR and AND gates', detail: 'Place NOR at (310, 165) and AND at (470, 225).' },
+      { title: 'Wire Motion Sensors to NOR', detail: 'Connect MOTION_1 → NOR and MOTION_2 → NOR.' },
+      { title: 'Gate with TECH_PASS', detail: 'Wire NOR → AND, TECH_PASS → AND, and AND → QUIET_VAULT.' }
+    ]
+  },
+  {
+    id: 5,
+    tier: 3,
+    curriculumTag: 'Tier 3 • Gate Restriction Synthesis (Universal NAND)',
+    title: 'Vault 5: Restricted Hardware — OR using only NAND',
+    briefing: 'The AND, OR, and NOT chips are damaged! Build an OR lock (unlocks if SENSOR_A = 1 OR SENSOR_B = 1) using ONLY NAND gates (max 3).',
+    baseScore: 300,
+    parSeconds: 180,
+    maxGates: 3,
+    disabledGates: ['AND', 'OR', 'NOT', 'XOR', 'NOR'],
+    targetExpression: 'SENSOR_A OR SENSOR_B (using NAND only)',
+    targetOutputs: [0, 1, 1, 1],
+    nodes: [
+      { id: 'in_a',  type: 'input',  label: 'SENSOR_A',   x: 130, y: 140, val: 0 },
+      { id: 'in_b',  type: 'input',  label: 'SENSOR_B',   x: 130, y: 310, val: 0 },
+      { id: 'out_1', type: 'output', label: 'BACKUP_BOLT', x: 620, y: 225, val: 0 }
+    ],
+    solutionSteps: [
+      { title: 'Invert each input with a NAND gate', detail: 'Note: A single input wired into a NAND gate acts as NOT (1→0, 0→1). Place NAND_1 at (290, 140) and NAND_2 at (290, 310).' },
+      { title: 'Wire inputs to their inverters', detail: 'Connect SENSOR_A → NAND_1 and SENSOR_B → NAND_2.' },
+      { title: 'Combine with a third NAND gate', detail: 'Place NAND_3 at (460, 225), wire NAND_1 → NAND_3, NAND_2 → NAND_3, and NAND_3 → BACKUP_BOLT.' }
+    ]
+  },
+  {
+    id: 6,
+    tier: 3,
+    curriculumTag: 'Tier 3 • Restricted Parity Synthesis (No XOR)',
+    title: 'Vault 6: Dual-Key Parity Lock (XOR banned)',
+    briefing: 'XOR is disabled! Unlock MASTER_VAULT (1) only when KEY_1 and KEY_2 DIFFER (0,1 or 1,0) using basic gates (AND, OR, NOT).',
+    baseScore: 350,
+    parSeconds: 210,
+    maxGates: 5,
+    disabledGates: ['XOR', 'NAND', 'NOR'],
+    targetExpression: '(KEY_1 AND NOT KEY_2) OR (NOT KEY_1 AND KEY_2)',
+    targetOutputs: [0, 1, 1, 0],
+    nodes: [
+      { id: 'in_a',  type: 'input',  label: 'KEY_1',        x: 115, y: 140, val: 0 },
+      { id: 'in_b',  type: 'input',  label: 'KEY_2',        x: 115, y: 310, val: 1 },
+      { id: 'out_1', type: 'output', label: 'MASTER_VAULT', x: 645, y: 225, val: 0 }
+    ],
+    solutionSteps: [
+      { title: 'Create two NOT gates', detail: 'Place NOT_1 at (250, 100) and NOT_2 at (250, 350). Wire KEY_1 → NOT_1 and KEY_2 → NOT_2.' },
+      { title: 'Build two AND branches', detail: 'Place AND_1 at (400, 150) and AND_2 at (400, 300). Wire KEY_1 & NOT_2 → AND_1; wire NOT_1 & KEY_2 → AND_2.' },
+      { title: 'Combine branches into OR', detail: 'Place OR at (535, 225), wire AND_1 → OR, AND_2 → OR, and OR → MASTER_VAULT.' }
+    ]
+  }
+];
+
+/* ============================================================================
+   MODULE 3: BOOLEAN LOGIC & FULL TRUTH TABLE ENGINE
+   Evaluates arbitrary DAG circuits, computes expressions, and checks all 2^n rows.
+   ============================================================================ */
+const TruthEngine = (() => {
+  let simTimer = null;
+
+  function evalGate(type, inputs) {
+    const a = inputs[0] || 0;
+    const b = inputs.length > 1 ? inputs[1] : a;
+    switch (type) {
+      case 'AND':  return (a && b) ? 1 : 0;
+      case 'OR':   return (a || b) ? 1 : 0;
+      case 'NOT':  return a ? 0 : 1;
+      case 'XOR':  return (a !== b) ? 1 : 0;
+      case 'NAND': return (a && b) ? 0 : 1;
+      case 'NOR':  return (a || b) ? 0 : 1;
+      default:     return 0;
+    }
+  }
+
+  function generateTruthRows(numInputs) {
+    const rows = [];
+    const total = 1 << numInputs;
+    for (let mask = 0; mask < total; mask++) {
+      const bits = [];
+      for (let bit = numInputs - 1; bit >= 0; bit--) {
+        bits.push((mask >> bit) & 1);
+      }
+      rows.push(bits);
+    }
+    return rows;
+  }
+
+  function simulateVector(nodes, wires, vec) {
+    const simNodes = nodes.map(n => ({ ...n }));
+    const inputs = simNodes.filter(n => n.type === 'input');
+    inputs.forEach((inp, idx) => { inp.val = vec[idx] || 0; });
+    simNodes.forEach(n => { if (n.type !== 'input') n.val = 0; });
+
+    for (let pass = 0; pass < simNodes.length + 3; pass++) {
+      simNodes.forEach(n => {
+        if (n.type === 'input') return;
+        const incoming = wires.filter(w => w.to === n.id).map(w => {
+          const src = simNodes.find(s => s.id === w.from);
+          return src ? src.val : 0;
+        });
+        if (incoming.length === 0) {
+          n.val = 0;
+        } else if (n.type === 'output') {
+          n.val = incoming.some(v => v === 1) ? 1 : 0;
+        } else {
+          n.val = evalGate(n.type, incoming);
+        }
+      });
+    }
+    const outNode = simNodes.find(n => n.type === 'output');
+    return outNode ? outNode.val : 0;
+  }
+
+  function buildLiveExpression(nodes, wires, nodeId, depth = 0) {
+    if (depth > 8) return '...';
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return '?';
+    if (node.type === 'input') return node.label;
+    const incoming = wires.filter(w => w.to === node.id).map(w => buildLiveExpression(nodes, wires, w.from, depth + 1));
+    if (incoming.length === 0) return node.type === 'output' ? 'UNWIRED' : `${node.type}(?)`;
+    if (node.type === 'output') return incoming.join(' OR ');
+    if (node.type === 'NOT') return `NOT(${incoming[0]})`;
+    if (incoming.length === 1) return `${node.type}(${incoming[0]}, ${incoming[0]})`;
+    return `(${incoming.join(` ${node.type} `)})`;
+  }
+
+  function evaluateAllRows(level, nodes, wires) {
+    const inputs = nodes.filter(n => n.type === 'input');
+    const combinations = generateTruthRows(inputs.length);
+    const results = combinations.map((vec, idx) => {
+      const actual = simulateVector(nodes, wires, vec);
+      const expected = level.targetOutputs[idx] !== undefined ? level.targetOutputs[idx] : 0;
+      return { idx, vec, actual, expected, match: actual === expected };
+    });
+    const rowsPassed = results.filter(r => r.match).length;
+    return { results, rowsPassed, totalRows: combinations.length, allPassed: rowsPassed === combinations.length };
+  }
+
+  function stopSweep() {
+    if (simTimer) {
+      clearInterval(simTimer);
+      simTimer = null;
+    }
+  }
+
+  function runSimulationSweep() {
+    stopSweep();
+    const state = LevelController.getState();
+    const inputs = state.nodes.filter(n => n.type === 'input');
+    const combinations = generateTruthRows(inputs.length);
+    let idx = 0;
+    ConsoleLogger.log(`Sweeping all ${combinations.length} truth-table input states...`, 'log-info');
+    LevelController.applyTruthRow(0);
+
+    simTimer = setInterval(() => {
+      idx++;
+      if (idx >= combinations.length) {
+        stopSweep();
+        LevelController.clearActiveRow();
+        ConsoleLogger.log('Truth table sweep complete.', 'log-ok');
+        return;
+      }
+      LevelController.applyTruthRow(idx);
+    }, 650);
+  }
+
+  return { evalGate, generateTruthRows, simulateVector, buildLiveExpression, evaluateAllRows, stopSweep, runSimulationSweep };
+})();
+
+/* ============================================================================
+   MODULE 4: RANDOM PRACTICE VAULT GENERATOR
+   Generates solvable Tier 1, 2, or 3 puzzles offline with gate restrictions.
+   ============================================================================ */
+const PracticeGenerator = (() => {
+  const SENSOR_POOL = ['KEYCARD', 'BIOMETRIC', 'LASER', 'MOTION', 'THERMAL', 'PRESSURE', 'OVERRIDE', 'BADGE'];
+  const VAULT_POOL = ['VAULT_ALPHA', 'CRYO_DOOR', 'LASER_CORE', 'ARMORY_BOLT', 'APEX_LOCK'];
+
+  function pickRandom(arr, count) {
+    const copy = [...arr];
+    const out = [];
+    while (out.length < count && copy.length > 0) {
+      const i = Math.floor(Math.random() * copy.length);
+      out.push(copy.splice(i, 1)[0]);
+    }
+    return out;
+  }
+
+  function generateRandomVault() {
+    if (TeacherHub.isAssessmentMode()) {
+      ConsoleLogger.log('Practice Generator is locked while Formal Assessment Mode is active.', 'log-err');
+      return;
+    }
+    const tier = Number(document.getElementById('practiceTierSelect').value) || 1;
+    const numInputs = tier === 1 ? 2 : 3;
+    const labels = pickRandom(SENSOR_POOL, numInputs);
+    const outLabel = pickRandom(VAULT_POOL, 1)[0];
+
+    const nodes = labels.map((lbl, idx) => ({
+      id: 'in_' + idx,
+      type: 'input',
+      label: lbl,
+      x: 125,
+      y: numInputs === 2 ? (idx === 0 ? 140 : 310) : (110 + idx * 115),
+      val: 0
+    }));
+    nodes.push({ id: 'out_1', type: 'output', label: outLabel, x: 620, y: 225, val: 0 });
+
+    let disabledGates = [];
+    let maxGates = 2;
+    let baseScore = 100;
+    let targetExpr = '';
+    let evalFn = null;
+    let solutionSteps = [];
+
+    if (tier === 1) {
+      const gate = Math.random() < 0.5 ? 'AND' : 'OR';
+      disabledGates = GATE_TYPES.filter(g => g !== 'AND' && g !== 'OR');
+      maxGates = 2;
+      baseScore = 100;
+      targetExpr = `${labels[0]} ${gate} ${labels[1]}`;
+      evalFn = ([a, b]) => TruthEngine.evalGate(gate, [a, b]);
+      solutionSteps = [
+        { title: `Place a ${gate} gate`, detail: `Select ${gate} and place it near the center of the canvas.` },
+        { title: 'Wire inputs to gate', detail: `Connect ${labels[0]} → ${gate} and ${labels[1]} → ${gate}.` },
+        { title: `Wire ${gate} → ${outLabel}`, detail: `Connect the output to ${outLabel} and click Test Vault Lock.` }
+      ];
+    } else if (tier === 2) {
+      const g1 = pickRandom(['AND', 'OR', 'XOR'], 1)[0];
+      const g2 = pickRandom(['AND', 'OR'], 1)[0];
+      disabledGates = ['NAND', 'NOR'];
+      maxGates = 3;
+      baseScore = 200;
+      targetExpr = `(${labels[0]} ${g1} ${labels[1]}) ${g2} ${labels[2]}`;
+      evalFn = ([a, b, c]) => TruthEngine.evalGate(g2, [TruthEngine.evalGate(g1, [a, b]), c]);
+      solutionSteps = [
+        { title: `Place ${g1} and ${g2} gates`, detail: `Place ${g1} at (310, 165) and ${g2} at (470, 225).` },
+        { title: `Wire ${labels[0]} & ${labels[1]} into ${g1}`, detail: `Connect the first two inputs into ${g1}.` },
+        { title: `Wire ${g1} & ${labels[2]} into ${g2} → ${outLabel}`, detail: `Complete the second stage into ${outLabel}.` }
+      ];
+    } else {
+      // Tier 3: Restricted synthesis challenge
+      disabledGates = ['AND', 'OR', 'NOT', 'XOR', 'NOR'];
+      maxGates = 3;
+      baseScore = 300;
+      targetExpr = `NOT(${labels[0]} AND ${labels[1]}) AND ${labels[2]} (using NAND only)`;
+      evalFn = ([a, b, c]) => {
+        const nand1 = TruthEngine.evalGate('NAND', [a, b]);
+        const nand2 = TruthEngine.evalGate('NAND', [nand1, c]);
+        return TruthEngine.evalGate('NAND', [nand2, nand2]);
+      };
+      solutionSteps = [
+        { title: 'Compute NAND of first two inputs', detail: `Place NAND_1, wire ${labels[0]} and ${labels[1]} into NAND_1.` },
+        { title: 'NAND with third input', detail: `Place NAND_2, wire NAND_1 and ${labels[2]} into NAND_2.` },
+        { title: 'Invert NAND_2 with NAND_3', detail: `Place NAND_3, wire NAND_2 → NAND_3, and wire NAND_3 → ${outLabel}.` }
+      ];
+    }
+
+    const rows = TruthEngine.generateTruthRows(numInputs);
+    const targetOutputs = rows.map(vec => evalFn(vec));
+
+    const practiceLevel = {
+      id: 'practice_' + Date.now(),
+      isPractice: true,
+      tier,
+      curriculumTag: `Random Practice • Tier ${tier}`,
+      title: `🎲 Practice Vault (Tier ${tier}): ${outLabel}`,
+      briefing: `Practice Challenge: Construct a circuit matching the target truth table for ${outLabel} within ${maxGates} gates.`,
+      baseScore,
+      parSeconds: 90 + tier * 30,
+      maxGates,
+      disabledGates,
+      targetExpression: targetExpr,
+      targetOutputs,
+      nodes,
+      solutionSteps
+    };
+
+    LevelController.loadCustomLevel(practiceLevel);
+    ConsoleLogger.log(`Generated new Tier ${tier} Practice Vault!`, 'log-info');
+  }
+
+  return { generateRandomVault };
+})();
+
+/* ============================================================================
+   MODULE 5: STUDENT SESSION, SCORING & OFFLINE EXPORT (SETUP C)
+   ============================================================================ */
+const StudentSession = (() => {
+  const STORAGE_KEY = 'logicgate_v3_student_session';
+  let session = {
+    student: { adminNo: '', fullName: '', classGroup: '' },
+    records: {}, // keyed by levelId
+    practiceCompleted: 0
+  };
+
+  function init() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.student) session = parsed;
+      }
+    } catch (e) { /* ignore storage errors */ }
+
+    updateHud();
+    if (!isValidAdminNo(session.student.adminNo) || !session.student.fullName) {
+      openLoginModal();
+    }
+  }
+
+  function isValidAdminNo(val) {
+    return /^\d{5,6}$/.test(String(val || '').trim());
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    } catch (e) { /* ignore */ }
+    updateHud();
+  }
+
+  function openLoginModal() {
+    document.getElementById('inputAdminNo').value = session.student.adminNo || '';
+    document.getElementById('inputFullName').value = session.student.fullName || '';
+    document.getElementById('inputClassGroup').value = session.student.classGroup || '';
+    document.getElementById('loginError').textContent = '';
+    ModalUI.open('loginModal');
+  }
+
+  function saveProfile() {
+    const adminNo = document.getElementById('inputAdminNo').value.trim();
+    const fullName = document.getElementById('inputFullName').value.trim();
+    const classGroup = document.getElementById('inputClassGroup').value.trim();
+    const errEl = document.getElementById('loginError');
+
+    if (!isValidAdminNo(adminNo)) {
+      errEl.textContent = 'Admin Number must be strictly 5 or 6 digits (e.g., 104829).';
+      return;
+    }
+    if (!fullName) {
+      errEl.textContent = 'Please enter your Full Name.';
+      return;
+    }
+    if (!classGroup) {
+      errEl.textContent = 'Please enter your Class / Grade group (e.g., 9A).';
+      return;
+    }
+
+    session.student = { adminNo, fullName, classGroup };
+    save();
+    ModalUI.close('loginModal');
+    ConsoleLogger.log(`Signed in: ${fullName} (Admin #${adminNo}, Class ${classGroup})`, 'log-ok');
+  }
+
+  function ensureLevelRecord(level) {
+    if (level.isPractice) return null;
+    if (!session.records[level.id]) {
+      session.records[level.id] = {
+        levelId: level.id,
+        title: level.title,
+        unlocked: false,
+        baseScore: level.baseScore,
+        earnedScore: 0,
+        gatesUsed: 0,
+        maxGates: level.maxGates,
+        disabledGates: [...level.disabledGates],
+        failedAttempts: 0,
+        timeSeconds: 0,
+        parSeconds: level.parSeconds,
+        solutionViewed: false,
+        rowsPassed: 0,
+        totalRows: level.targetOutputs.length
+      };
+    }
+    return session.records[level.id];
+  }
+
+  function recordFailedAttempt(level, rowsPassed, totalRows) {
+    const rec = ensureLevelRecord(level);
+    if (!rec) return;
+    rec.failedAttempts += 1;
+    rec.rowsPassed = Math.max(rec.rowsPassed, rowsPassed);
+    rec.totalRows = totalRows;
+    save();
+  }
+
+  function markSolutionViewed(level) {
+    const rec = ensureLevelRecord(level);
+    if (!rec) return;
+    rec.solutionViewed = true;
+    save();
+  }
+
+  function calculateLevelPoints(level, gatesUsed, failedAttempts, timeSeconds, solutionViewed) {
+    const base = level.baseScore;
+    const efficiencyBonus = Math.max(0, (level.maxGates - gatesUsed) * 10);
+    const failPenalty = failedAttempts * 5;
+    const overtime = Math.max(0, timeSeconds - level.parSeconds);
+    const timePenalty = Math.min(Math.round(base * 0.25), Math.floor(overtime / 15));
+    const hintPenalty = solutionViewed ? Math.round(base * 0.5) : 0;
+    return Math.max(10, base + efficiencyBonus - failPenalty - timePenalty - hintPenalty);
+  }
+
+  function recordVaultUnlock(level, gatesUsed, timeSeconds, totalRows) {
+    if (level.isPractice) {
+      session.practiceCompleted += 1;
+      save();
+      return calculateLevelPoints(level, gatesUsed, 0, timeSeconds, false);
+    }
+    const rec = ensureLevelRecord(level);
+    rec.timeSeconds += timeSeconds;
+    const earned = calculateLevelPoints(level, gatesUsed, rec.failedAttempts, rec.timeSeconds, rec.solutionViewed);
+    if (!rec.unlocked || earned > rec.earnedScore) {
+      rec.unlocked = true;
+      rec.earnedScore = earned;
+      rec.gatesUsed = gatesUsed;
+      rec.rowsPassed = totalRows;
+      rec.totalRows = totalRows;
+    }
+    save();
+    return rec.earnedScore;
+  }
+
+  function addElapsedSeconds(level, secs) {
+    const rec = ensureLevelRecord(level);
+    if (!rec || rec.unlocked) return;
+    rec.timeSeconds += secs;
+    save();
+  }
+
+  function getSummaryPayload() {
+    const levelList = LEVELS.map(lvl => {
+      const r = session.records[lvl.id];
+      return r ? { ...r } : {
+        levelId: lvl.id,
+        title: lvl.title,
+        unlocked: false,
+        baseScore: lvl.baseScore,
+        earnedScore: 0,
+        gatesUsed: 0,
+        maxGates: lvl.maxGates,
+        disabledGates: [...lvl.disabledGates],
+        failedAttempts: 0,
+        timeSeconds: 0,
+        parSeconds: lvl.parSeconds,
+        solutionViewed: false,
+        rowsPassed: 0,
+        totalRows: lvl.targetOutputs.length
+      };
+    });
+
+    const totalScore = levelList.reduce((acc, l) => acc + l.earnedScore, 0);
+    const vaultsUnlocked = levelList.filter(l => l.unlocked).length;
+    const totalFailedAttempts = levelList.reduce((acc, l) => acc + l.failedAttempts, 0);
+    const totalTimeSeconds = levelList.reduce((acc, l) => acc + l.timeSeconds, 0);
+    const solutionsViewedCount = levelList.filter(l => l.solutionViewed).length;
+
+    return {
+      schemaVersion: '1.0',
+      exportedAt: new Date().toISOString(),
+      assessmentMode: TeacherHub.isAssessmentMode(),
+      student: { ...session.student },
+      summary: {
+        totalScore,
+        vaultsUnlocked,
+        totalVaults: LEVELS.length,
+        totalFailedAttempts,
+        totalTimeSeconds,
+        solutionsViewedCount,
+        practiceVaultsCompleted: session.practiceCompleted
+      },
+      levels: levelList
+    };
+  }
+
+  function updateHud() {
+    const infoEl = document.getElementById('hudStudentInfo');
+    if (session.student.adminNo) {
+      infoEl.textContent = `${session.student.fullName} (#${session.student.adminNo} • ${session.student.classGroup})`;
+    } else {
+      infoEl.textContent = 'Click to Sign In';
+    }
+    const payload = getSummaryPayload();
+    document.getElementById('hudTotalScore').textContent = payload.summary.totalScore;
+  }
+
+  return {
+    init, openLoginModal, saveProfile, recordFailedAttempt,
+    markSolutionViewed, recordVaultUnlock, addElapsedSeconds, getSummaryPayload
+  };
+})();
+
+const ExportManager = (() => {
+  function openExportModal() {
+    const payload = StudentSession.getSummaryPayload();
+    if (!payload.student.adminNo) {
+      StudentSession.openLoginModal();
+      return;
+    }
+    const s = payload.summary;
+    document.getElementById('exportSummaryBanner').innerHTML =
+      `<strong>${payload.student.fullName}</strong> (Admin No: <strong>${payload.student.adminNo}</strong> | Class: <strong>${payload.student.classGroup}</strong>)<br>` +
+      `Total Score: <strong class="ok">${s.totalScore} pts</strong> &bull; Vaults Unlocked: <strong>${s.vaultsUnlocked}/${s.totalVaults}</strong> &bull; ` +
+      `Failed Attempts: <strong>${s.totalFailedAttempts}</strong> &bull; Total Time: <strong>${s.totalTimeSeconds}s</strong>`;
+    document.getElementById('exportJsonPreview').value = JSON.stringify(payload, null, 2);
+    ModalUI.open('exportModal');
+  }
+
+  function triggerDownload(filename, mimeType, content) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadJSON() {
+    const payload = StudentSession.getSummaryPayload();
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const fname = `vault_result_${payload.student.adminNo}_${stamp}.json`;
+    triggerDownload(fname, 'application/json', JSON.stringify(payload, null, 2));
+    ConsoleLogger.log(`Downloaded JSON receipt: ${fname}`, 'log-ok');
+  }
+
+  function downloadCSV() {
+    const p = StudentSession.getSummaryPayload();
+    const s = p.summary;
+    const headers = [
+      'AdminNo', 'FullName', 'ClassGroup', 'TotalScore', 'VaultsUnlocked',
+      'TotalVaults', 'FailedAttempts', 'TotalTimeSeconds', 'SolutionsViewed',
+      'AssessmentMode', ...p.levels.map(l => `L${l.levelId}_Score`), 'ExportedAt'
+    ];
+    const row = [
+      p.student.adminNo,
+      `"${p.student.fullName.replace(/"/g, '""')}"`,
+      `"${p.student.classGroup.replace(/"/g, '""')}"`,
+      s.totalScore,
+      s.vaultsUnlocked,
+      s.totalVaults,
+      s.totalFailedAttempts,
+      s.totalTimeSeconds,
+      s.solutionsViewedCount,
+      p.assessmentMode ? 'TEST_MODE' : 'PRACTICE',
+      ...p.levels.map(l => l.earnedScore),
+      p.exportedAt
+    ];
+    const csv = headers.join(',') + '\n' + row.join(',');
+    const fname = `vault_result_${p.student.adminNo}.csv`;
+    triggerDownload(fname, 'text/csv', csv);
+    ConsoleLogger.log(`Downloaded CSV markbook row: ${fname}`, 'log-ok');
+  }
+
+  function copyReceiptText() {
+    const ta = document.getElementById('exportJsonPreview');
+    ta.select();
+    document.execCommand('copy');
+    ConsoleLogger.log('Copied JSON receipt to clipboard.', 'log-info');
+  }
+
+  return { openExportModal, downloadJSON, downloadCSV, copyReceiptText };
+})();
+
+/* ============================================================================
+   MODULE 6: TEACHER HUB & FORMAL ASSESSMENT MODE
+   ============================================================================ */
+const TeacherHub = (() => {
+  const TEACHER_PIN = '1234';
+  const HUB_STORAGE_KEY = 'logicgate_v3_teacher_records';
+  const MODE_STORAGE_KEY = 'logicgate_v3_assessment_mode';
+  let unlocked = false;
+  let assessmentMode = localStorage.getItem(MODE_STORAGE_KEY) === 'true';
+  let recordsMap = {}; // keyed by adminNo
+
+  function init() {
+    try {
+      const saved = localStorage.getItem(HUB_STORAGE_KEY);
+      if (saved) recordsMap = JSON.parse(saved) || {};
+    } catch (e) { /* ignore */ }
+    applyAssessmentModeUI();
+  }
+
+  function isAssessmentMode() {
+    return assessmentMode;
+  }
+
+  function openHub() {
+    document.getElementById('teacherPinInput').value = '';
+    document.getElementById('teacherPinError').textContent = '';
+    document.getElementById('teacherPinGate').style.display = unlocked ? 'none' : 'flex';
+    document.getElementById('teacherHubContent').style.display = unlocked ? 'flex' : 'none';
+    document.getElementById('assessmentModeToggle').checked = assessmentMode;
+    if (unlocked) renderTable();
+    ModalUI.open('teacherHubModal');
+  }
+
+  function unlockHub() {
+    const pin = document.getElementById('teacherPinInput').value.trim();
+    if (pin === TEACHER_PIN) {
+      unlocked = true;
+      document.getElementById('teacherPinGate').style.display = 'none';
+      document.getElementById('teacherHubContent').style.display = 'flex';
+      document.getElementById('assessmentModeToggle').checked = assessmentMode;
+      renderTable();
+    } else {
+      document.getElementById('teacherPinError').textContent = 'Incorrect PIN (Default: 1234).';
+    }
+  }
+
+  function toggleAssessmentMode(enabled) {
+    assessmentMode = Boolean(enabled);
+    localStorage.setItem(MODE_STORAGE_KEY, String(assessmentMode));
+    applyAssessmentModeUI();
+    ConsoleLogger.log(
+      assessmentMode
+        ? 'Teacher enabled FORMAL ASSESSMENT MODE (Show Solution & Practice Vaults locked).'
+        : 'Teacher disabled Formal Assessment Mode (Classroom Practice Mode active).',
+      'log-warn'
+    );
+  }
+
+  function applyAssessmentModeUI() {
+    const solBtn = document.getElementById('showSolutionBtn');
+    const pracBtn = document.getElementById('practiceBtn');
+    const edBtn = document.getElementById('editorNavBtn');
+    const badgeArea = document.getElementById('modeBadgeArea');
+
+    if (assessmentMode) {
+      solBtn.disabled = true;
+      solBtn.title = 'Disabled during Formal Assessment Mode';
+      pracBtn.disabled = true;
+      edBtn.disabled = true;
+      badgeArea.innerHTML = `<span class="pill pill-test">🔒 TEST MODE: Walkthroughs Disabled</span>`;
+    } else {
+      solBtn.disabled = false;
+      solBtn.title = 'View step-by-step walkthrough (-50% score penalty)';
+      pracBtn.disabled = false;
+      edBtn.disabled = false;
+      badgeArea.innerHTML = `<span class="pill pill-ok">Classroom Practice Mode</span>`;
+    }
+  }
+
+  function ingestPayload(obj) {
+    if (!obj || !obj.student || !obj.student.adminNo || !obj.summary) return false;
+    recordsMap[obj.student.adminNo] = obj;
+    try {
+      localStorage.setItem(HUB_STORAGE_KEY, JSON.stringify(recordsMap));
+    } catch (e) { /* ignore */ }
+    return true;
+  }
+
+  function importFiles(event) {
+    const files = Array.from(event.target.files || []);
+    let imported = 0;
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (ingestPayload(parsed)) imported++;
+          renderTable();
+        } catch (err) {
+          ConsoleLogger.log(`Failed to parse ${file.name}`, 'log-err');
+        }
+      };
+      reader.readAsText(file);
+    });
+    setTimeout(() => ConsoleLogger.log(`Imported student receipts into Teacher Hub.`, 'log-ok'), 200);
+  }
+
+  function importPastedJson() {
+    const raw = document.getElementById('hubPasteInput').value.trim();
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (ingestPayload(parsed)) {
+        document.getElementById('hubPasteInput').value = '';
+        renderTable();
+        ConsoleLogger.log(`Imported receipt for ${parsed.student.fullName} (#${parsed.student.adminNo}).`, 'log-ok');
+      }
+    } catch (e) {
+      ConsoleLogger.log('Invalid JSON receipt text.', 'log-err');
+    }
+  }
+
+  function loadCurrentLearnerIntoHub() {
+    const p = StudentSession.getSummaryPayload();
+    if (!p.student.adminNo) {
+      ConsoleLogger.log('Current browser learner has not signed in yet.', 'log-err');
+      return;
+    }
+    ingestPayload(p);
+    renderTable();
+  }
+
+  function clearHubRecords() {
+    recordsMap = {};
+    localStorage.removeItem(HUB_STORAGE_KEY);
+    renderTable();
+  }
+
+  function renderTable() {
+    const tbody = document.querySelector('#teacherScoresTable tbody');
+    const list = Object.values(recordsMap).sort((a, b) => {
+      if (b.summary.totalScore !== a.summary.totalScore) return b.summary.totalScore - a.summary.totalScore;
+      return a.summary.totalTimeSeconds - b.summary.totalTimeSeconds;
+    });
+
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" style="color:var(--muted); padding:12px;">No student receipts imported yet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = list.map((rec, idx) => {
+      const s = rec.summary;
+      return `<tr>
+        <td><strong>#${idx + 1}</strong></td>
+        <td>${rec.student.adminNo}</td>
+        <td>${rec.student.fullName}</td>
+        <td>${rec.student.classGroup}</td>
+        <td class="ok"><strong>${s.totalScore}</strong></td>
+        <td>${s.vaultsUnlocked}/${s.totalVaults}</td>
+        <td>${s.totalFailedAttempts}</td>
+        <td>${s.totalTimeSeconds}s</td>
+        <td>${s.solutionsViewedCount}</td>
+        <td>${rec.assessmentMode ? 'TEST' : 'PRACTICE'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function exportMasterCSV() {
+    const list = Object.values(recordsMap).sort((a, b) => b.summary.totalScore - a.summary.totalScore);
+    if (list.length === 0) {
+      ConsoleLogger.log('No records in Teacher Hub to export.', 'log-err');
+      return;
+    }
+    const headers = [
+      'Rank', 'AdminNo', 'FullName', 'ClassGroup', 'TotalScore', 'VaultsUnlocked',
+      'TotalVaults', 'FailedAttempts', 'TotalTimeSeconds', 'SolutionsViewed',
+      'Mode', ...LEVELS.map(l => `L${l.id}_Score`), 'ExportedAt'
+    ];
+    const rows = list.map((p, idx) => {
+      const s = p.summary;
+      return [
+        idx + 1,
+        p.student.adminNo,
+        `"${p.student.fullName.replace(/"/g, '""')}"`,
+        `"${p.student.classGroup.replace(/"/g, '""')}"`,
+        s.totalScore,
+        s.vaultsUnlocked,
+        s.totalVaults,
+        s.totalFailedAttempts,
+        s.totalTimeSeconds,
+        s.solutionsViewedCount,
+        p.assessmentMode ? 'TEST_MODE' : 'PRACTICE',
+        ...LEVELS.map(l => {
+          const found = (p.levels || []).find(x => x.levelId === l.id);
+          return found ? found.earnedScore : 0;
+        }),
+        p.exportedAt
+      ].join(',');
+    });
+    const csv = headers.join(',') + '\n' + rows.join('\n');
+    const stamp = new Date().toISOString().slice(0, 10);
+    ExportManager.triggerDownload(`LogicGate_Class_Markbook_${stamp}.csv`, 'text/csv', csv);
+    ConsoleLogger.log(`Exported Master Class Markbook (${list.length} learners).`, 'log-ok');
+  }
+
+  return {
+    init, isAssessmentMode, openHub, unlockHub, toggleAssessmentMode,
+    importFiles, importPastedJson, loadCurrentLearnerIntoHub, clearHubRecords, exportMasterCSV
+  };
+})();
+
+/* ============================================================================
+   MODULE 7: LEVEL EDITOR MODULE
+   ============================================================================ */
+const LevelEditor = (() => {
+  function openEditor() {
+    if (TeacherHub.isAssessmentMode()) {
+      ConsoleLogger.log('Level Editor is disabled during Formal Assessment Mode.', 'log-err');
+      return;
+    }
+    const lvl = LevelController.getCurrentLevel();
+    document.getElementById('edTitle').value = lvl.title;
+    document.getElementById('edBaseScore').value = lvl.baseScore;
+    document.getElementById('edMaxGates').value = lvl.maxGates;
+    document.getElementById('edParSeconds').value = lvl.parSeconds;
+    document.getElementById('edBriefing').value = lvl.briefing;
+    document.getElementById('edTargetOutputs').value = lvl.targetOutputs.join(',');
+
+    const box = document.getElementById('edDisabledGatesBox');
+    box.innerHTML = GATE_TYPES.map(g => {
+      const checked = lvl.disabledGates.includes(g) ? 'checked' : '';
+      return `<label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+        <input type="checkbox" value="${g}" ${checked} /> ${g}
+      </label>`;
+    }).join('');
+
+    ModalUI.open('editorModal');
+  }
+
+  function applyChanges() {
+    const lvl = LevelController.getCurrentLevel();
+    lvl.title = document.getElementById('edTitle').value.trim() || lvl.title;
+    lvl.baseScore = Math.max(25, Number(document.getElementById('edBaseScore').value) || 100);
+    lvl.maxGates = Math.max(1, Number(document.getElementById('edMaxGates').value) || 2);
+    lvl.parSeconds = Math.max(15, Number(document.getElementById('edParSeconds').value) || 60);
+    lvl.briefing = document.getElementById('edBriefing').value.trim() || lvl.briefing;
+
+    const checked = Array.from(document.querySelectorAll('#edDisabledGatesBox input:checked')).map(cb => cb.value);
+    lvl.disabledGates = checked;
+
+    const rawTargets = document.getElementById('edTargetOutputs').value
+      .split(',').map(s => Number(s.trim())).filter(n => n === 0 || n === 1);
+    if (rawTargets.length === lvl.targetOutputs.length) {
+      lvl.targetOutputs = rawTargets;
+    }
+
+    LevelController.refreshLevelSelector();
+    LevelController.loadCustomLevel(lvl);
+    ModalUI.close('editorModal');
+    ConsoleLogger.log(`Updated level configuration: "${lvl.title}".`, 'log-ok');
+  }
+
+  function exportLevelJson() {
+    const lvl = LevelController.getCurrentLevel();
+    const json = JSON.stringify(lvl, null, 2);
+    navigator.clipboard?.writeText(json).catch(() => {});
+    ConsoleLogger.log('Copied current Level JSON schema to clipboard.', 'log-info');
+  }
+
+  return { openEditor, applyChanges, exportLevelJson };
+})();
+
+/* ============================================================================
+   MODULE 8: MAIN LEVEL CONTROLLER, TIMER & CANVAS RENDERER
+   ============================================================================ */
+const ConsoleLogger = (() => {
+  function log(msg, cls = '') {
+    const el = document.getElementById('consoleLog');
+    el.innerHTML += `<div class="${cls}">&gt; ${msg}</div>`;
+    el.scrollTop = el.scrollHeight;
+  }
+  function clear(initialMsg) {
+    document.getElementById('consoleLog').innerHTML = `<div class="log-info">&gt; ${initialMsg}</div>`;
+  }
+  return { log, clear };
+})();
+
+const ModalUI = (() => {
+  function open(id) { document.getElementById(id).classList.add('open'); }
+  function close(id) { document.getElementById(id).classList.remove('open'); }
+
+  function openSolution() {
+    if (TeacherHub.isAssessmentMode()) {
+      ConsoleLogger.log('Show Solution is locked in Formal Assessment Mode.', 'log-err');
+      return;
+    }
+    const lvl = LevelController.getCurrentLevel();
+    StudentSession.markSolutionViewed(lvl);
+    document.getElementById('solutionTitle').textContent = `${lvl.title} — Walkthrough (-50% Score Penalty Applied)`;
+    const box = document.getElementById('solutionSteps');
+    box.innerHTML = lvl.solutionSteps.map((s, i) =>
+      `<div class="step-item"><div class="step-num">${i + 1}</div><div class="step-content"><strong>${s.title}</strong><p>${s.detail}</p></div></div>`
+    ).join('');
+    open('solutionModal');
+  }
+
+  return { open, close, openSolution };
+})();
+
+const LevelController = (() => {
+  let currentLevel = LEVELS[0];
+  let nodes = [];
+  let wires = [];
+  let activeTool = 'wire';
+  let selectedSource = null;
+  let activeRowIdx = null;
+  let failedRowIdx = null;
+  let levelElapsedSeconds = 0;
+  let timerInterval = null;
+
+  function init() {
+    refreshLevelSelector();
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeTool = btn.dataset.tool;
+        selectedSource = null;
+        CanvasView.draw();
+      });
+    });
+
+    timerInterval = setInterval(() => {
+      if (document.querySelector('.modal-backdrop.open')) return;
+      levelElapsedSeconds += 1;
+      StudentSession.addElapsedSeconds(currentLevel, 1);
+      const mins = String(Math.floor(levelElapsedSeconds / 60)).padStart(2, '0');
+      const secs = String(levelElapsedSeconds % 60).padStart(2, '0');
+      document.getElementById('hudTimer').textContent = `${mins}:${secs}`;
+    }, 1000);
+
+    loadLevel(LEVELS[0].id);
+  }
+
+  function refreshLevelSelector() {
+    const sel = document.getElementById('levelSelector');
+    sel.innerHTML = '';
+    LEVELS.forEach(l => {
+      const opt = document.createElement('option');
+      opt.value = l.id;
+      opt.textContent = `${l.title} (${l.baseScore} pts)`;
+      sel.appendChild(opt);
+    });
+  }
+
+  function loadLevel(id) {
+    const found = LEVELS.find(l => String(l.id) === String(id)) || LEVELS[0];
+    document.getElementById('levelSelector').value = found.id;
+    loadCustomLevel(found);
+  }
+
+  function loadCustomLevel(lvlObj) {
+    TruthEngine.stopSweep();
+    currentLevel = lvlObj;
+    levelElapsedSeconds = 0;
+    document.getElementById('hudTimer').textContent = '00:00';
+    document.getElementById('briefingBox').textContent = currentLevel.briefing;
+    document.getElementById('targetExprBox').textContent = `Goal: ${currentLevel.targetExpression}`;
+    document.getElementById('levelPointsTag').textContent = `Base: ${currentLevel.baseScore} pts | Par: ${currentLevel.parSeconds}s`;
+    document.getElementById('gateLimitDisplay').textContent = currentLevel.maxGates;
+
+    // Enforce gate restrictions in toolbar
+    const banned = currentLevel.disabledGates || [];
+    document.querySelectorAll('.gate-btn').forEach(btn => {
+      const g = btn.dataset.tool;
+      const isBanned = banned.includes(g);
+      btn.disabled = isBanned;
+      btn.title = isBanned ? `${g} is disabled in this vault` : `Place ${g} gate`;
+      if (isBanned && activeTool === g) {
+        activeTool = 'wire';
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-tool="wire"]').classList.add('active');
+      }
+    });
+
+    const allowed = GATE_TYPES.filter(g => !banned.includes(g));
+    document.getElementById('restrictionInfo').innerHTML =
+      `Allowed: ${allowed.map(g => `<span class="pill pill-ok">${g}</span>`).join(' ')} ` +
+      (banned.length ? `&nbsp; Disabled: ${banned.map(g => `<span class="pill pill-ban">${g}</span>`).join(' ')}` : '');
+
+    resetLevel();
+  }
+
+  function resetLevel() {
+    TruthEngine.stopSweep();
+    activeRowIdx = null;
+    failedRowIdx = null;
+    nodes = JSON.parse(JSON.stringify(currentLevel.nodes));
+    wires = [];
+    selectedSource = null;
+    ConsoleLogger.clear(`Loaded ${currentLevel.title}.`);
+    evaluateAndRender();
+    CanvasView.draw();
+  }
+
+  function evaluateAndRender() {
+    const inputs = nodes.filter(n => n.type === 'input');
+    const outNode = nodes.find(n => n.type === 'output');
+    const currentVec = inputs.map(i => i.val);
+
+    // Evaluate live visual signal state
+    nodes.forEach(n => { if (n.type !== 'input') n.val = 0; });
+    for (let pass = 0; pass < nodes.length + 3; pass++) {
+      nodes.forEach(n => {
+        if (n.type === 'input') return;
+        const incoming = wires.filter(w => w.to === n.id).map(w => {
+          const src = nodes.find(s => s.id === w.from);
+          return src ? src.val : 0;
+        });
+        if (incoming.length === 0) n.val = 0;
+        else if (n.type === 'output') n.val = incoming.some(v => v === 1) ? 1 : 0;
+        else n.val = TruthEngine.evalGate(n.type, incoming);
+      });
+    }
+
+    const gatesUsed = nodes.filter(n => GATE_TYPES.includes(n.type)).length;
+    const gEl = document.getElementById('gateCountDisplay');
+    gEl.textContent = gatesUsed;
+    gEl.className = gatesUsed <= currentLevel.maxGates ? 'ok' : 'bad';
+
+    const vEl = document.getElementById('vaultStatusDisplay');
+    if (outNode && outNode.val === 1) {
+      vEl.textContent = 'HIGH (1)';
+      vEl.className = 'ok';
+    } else {
+      vEl.textContent = 'LOW (0)';
+      vEl.className = 'bad';
+    }
+
+    if (outNode) {
+      document.getElementById('liveExprBox').textContent = `Live Circuit: ${TruthEngine.buildLiveExpression(nodes, wires, outNode.id)}`;
+    }
+
+    // Full truth table evaluation
+    const evalSummary = TruthEngine.evaluateAllRows(currentLevel, nodes, wires);
+    document.getElementById('ttRowCount').textContent = evalSummary.totalRows;
+
+    const table = document.getElementById('truthTable');
+    let html = '<thead><tr>';
+    inputs.forEach(inp => { html += `<th>${inp.label.slice(0, 7)}</th>`; });
+    html += '<th>LIVE</th><th>GOAL</th><th>OK?</th></tr></thead><tbody>';
+
+    evalSummary.results.forEach(r => {
+      const matchesCurrent = r.vec.every((b, i) => b === currentVec[i]);
+      const isHighlighted = activeRowIdx === r.idx || (activeRowIdx === null && matchesCurrent);
+      const isFail = failedRowIdx === r.idx;
+      html += `<tr class="tt-row ${isFail ? 'tt-fail' : isHighlighted ? 'tt-active' : ''}" onclick="LevelController.applyTruthRow(${r.idx})">`;
+      r.vec.forEach(bit => { html += `<td class="${bit ? 'bit-1' : 'bit-0'}">${bit}</td>`; });
+      html += `<td class="${r.actual ? 'bit-1' : 'bit-0'}">${r.actual}</td>`;
+      html += `<td class="${r.expected ? 'bit-1' : 'bit-0'}">${r.expected}</td>`;
+      html += `<td>${r.match ? '<span class="ok">✓</span>' : '<span class="bad">✗</span>'}</td></tr>`;
+    });
+    html += '</tbody>';
+    table.innerHTML = html;
+  }
+
+  function applyTruthRow(rowIdx) {
+    const inputs = nodes.filter(n => n.type === 'input');
+    const combinations = TruthEngine.generateTruthRows(inputs.length);
+    const vec = combinations[rowIdx];
+    if (!vec) return;
+    activeRowIdx = rowIdx;
+    inputs.forEach((inp, idx) => { inp.val = vec[idx]; });
+    evaluateAndRender();
+    CanvasView.draw();
+  }
+
+  function clearActiveRow() {
+    activeRowIdx = null;
+    evaluateAndRender();
+  }
+
+  function verifyVault() {
+    failedRowIdx = null;
+    evaluateAndRender();
+
+    const placedGates = nodes.filter(n => GATE_TYPES.includes(n.type));
+    const gatesUsed = placedGates.length;
+    const bannedUsed = placedGates.filter(g => (currentLevel.disabledGates || []).includes(g.type));
+    const evalSummary = TruthEngine.evaluateAllRows(currentLevel, nodes, wires);
+
+    if (bannedUsed.length > 0) {
+      StudentSession.recordFailedAttempt(currentLevel, evalSummary.rowsPassed, evalSummary.totalRows);
+      ConsoleLogger.log(`Verification failed: Restricted gate(s) used (${bannedUsed.map(g => g.type).join(', ')}).`, 'log-err');
+      return;
+    }
+
+    if (gatesUsed > currentLevel.maxGates) {
+      StudentSession.recordFailedAttempt(currentLevel, evalSummary.rowsPassed, evalSummary.totalRows);
+      ConsoleLogger.log(`Verification failed: Gate budget exceeded (${gatesUsed}/${currentLevel.maxGates}).`, 'log-err');
+      return;
+    }
+
+    if (!evalSummary.allPassed) {
+      const firstFail = evalSummary.results.find(r => !r.match);
+      failedRowIdx = firstFail ? firstFail.idx : null;
+      evaluateAndRender();
+      StudentSession.recordFailedAttempt(currentLevel, evalSummary.rowsPassed, evalSummary.totalRows);
+      const inputs = nodes.filter(n => n.type === 'input');
+      const stateDesc = firstFail.vec.map((b, i) => `${inputs[i].label}=${b}`).join(', ');
+      ConsoleLogger.log(
+        `LOCKED: Passed ${evalSummary.rowsPassed}/${evalSummary.totalRows} truth-table states. Failed at (${stateDesc}): expected ${firstFail.expected}, got ${firstFail.actual}.`,
+        'log-err'
+      );
+      return;
+    }
+
+    const awarded = StudentSession.recordVaultUnlock(currentLevel, gatesUsed, levelElapsedSeconds, evalSummary.totalRows);
+    ConsoleLogger.log(
+      `VAULT UNLOCKED! Verified all ${evalSummary.totalRows}/${evalSummary.totalRows} truth-table states with ${gatesUsed}/${currentLevel.maxGates} gates. Awarded +${awarded} pts!`,
+      'log-ok'
+    );
+  }
+
+  function handleCanvasClick(mx, my) {
+    const hitNode = nodes.find(n => Math.hypot(n.x - mx, n.y - my) <= 24);
+
+    if (activeTool === 'delete') {
+      if (hitNode && GATE_TYPES.includes(hitNode.type)) {
+        nodes = nodes.filter(n => n.id !== hitNode.id);
+        wires = wires.filter(w => w.from !== hitNode.id && w.to !== hitNode.id);
+        ConsoleLogger.log(`Removed ${hitNode.label} gate.`, 'log-warn');
+        failedRowIdx = null;
+        evaluateAndRender();
+        CanvasView.draw();
+        return;
+      }
+      // Check wire click
+      const hitWireIdx = wires.findIndex(w => {
+        const a = nodes.find(n => n.id === w.from);
+        const b = nodes.find(n => n.id === w.to);
+        if (!a || !b) return false;
+        const dist = pointToSegmentDist(mx, my, a.x, a.y, b.x, b.y);
+        return dist <= 8;
+      });
+      if (hitWireIdx !== -1) {
+        wires.splice(hitWireIdx, 1);
+        ConsoleLogger.log('Removed wire connection.', 'log-warn');
+        failedRowIdx = null;
+        evaluateAndRender();
+        CanvasView.draw();
+      }
+      return;
+    }
+
+    if (activeTool === 'wire' && hitNode) {
+      if (!selectedSource) {
+        selectedSource = hitNode;
+      } else if (selectedSource.id !== hitNode.id) {
+        const exists = wires.some(w => w.from === selectedSource.id && w.to === hitNode.id);
+        const incomingCount = wires.filter(w => w.to === hitNode.id).length;
+        const maxIn = hitNode.type === 'NOT' ? 1 : 2;
+        if (hitNode.type === 'input') {
+          ConsoleLogger.log('Cannot wire into an input sensor.', 'log-err');
+        } else if (hitNode.type !== 'output' && incomingCount >= maxIn) {
+          ConsoleLogger.log(`${hitNode.type} gate accepts at most ${maxIn} input wire(s).`, 'log-err');
+        } else if (!exists) {
+          wires.push({ from: selectedSource.id, to: hitNode.id });
+          ConsoleLogger.log(`Wired ${selectedSource.label} → ${hitNode.label}`);
+          activeRowIdx = null;
+          failedRowIdx = null;
+          evaluateAndRender();
+        }
+        selectedSource = null;
+      }
+      CanvasView.draw();
+      return;
+    }
+
+    if (hitNode && hitNode.type === 'input') {
+      hitNode.val = hitNode.val ? 0 : 1;
+      activeRowIdx = null;
+      ConsoleLogger.log(`Toggled ${hitNode.label} to ${hitNode.val}`);
+      evaluateAndRender();
+      CanvasView.draw();
+      return;
+    }
+
+    if (!hitNode && GATE_TYPES.includes(activeTool)) {
+      if ((currentLevel.disabledGates || []).includes(activeTool)) {
+        ConsoleLogger.log(`${activeTool} gate is disabled in this vault!`, 'log-err');
+        return;
+      }
+      nodes.push({
+        id: 'g_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+        type: activeTool,
+        label: activeTool,
+        x: mx,
+        y: my,
+        val: 0
+      });
+      ConsoleLogger.log(`Placed ${activeTool} gate at (${Math.round(mx)}, ${Math.round(my)})`);
+      activeRowIdx = null;
+      failedRowIdx = null;
+      evaluateAndRender();
+      CanvasView.draw();
+    }
+  }
+
+  function pointToSegmentDist(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+    let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+  }
+
+  function getState() { return { nodes, wires, selectedSource }; }
+  function getCurrentLevel() { return currentLevel; }
+
+  return {
+    init, refreshLevelSelector, loadLevel, loadCustomLevel, resetLevel,
+    applyTruthRow, clearActiveRow, verifyVault, handleCanvasClick, getState, getCurrentLevel
+  };
+})();
+
+const CanvasView = (() => {
+  const canvas = document.getElementById('circuitCanvas');
+  const ctx = canvas.getContext('2d');
+  let pulseOffset = 0;
+
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+    LevelController.handleCanvasClick(mx, my);
+  });
+
+  function draw() {
+    const { nodes, wires, selectedSource } = LevelController.getState();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Optional custom offline background image or grid fallback
+    if (ArtRegistry.images.background) {
+      ctx.drawImage(ArtRegistry.images.background, 0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.fillStyle = '#1e293b';
+      for (let x = 20; x < canvas.width; x += 28) {
+        for (let y = 20; y < canvas.height; y += 28) {
+          ctx.fillRect(x, y, 2, 2);
+        }
+      }
+    }
+
+    // Wires
+    wires.forEach(w => {
+      const a = nodes.find(n => n.id === w.from);
+      const b = nodes.find(n => n.id === w.to);
+      if (!a || !b) return;
+      const high = a.val === 1;
+      ctx.strokeStyle = high ? '#22c55e' : '#475569';
+      ctx.lineWidth = high ? 3.5 : 2;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+
+      if (high) {
+        const t = pulseOffset % 1;
+        const px = a.x + (b.x - a.x) * t;
+        const py = a.y + (b.y - a.y) * t;
+        ctx.fillStyle = '#86efac';
+        ctx.beginPath();
+        ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    // Nodes
+    nodes.forEach(n => {
+      const isHigh = n.val === 1;
+      if (selectedSource && selectedSource.id === n.id) {
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 26, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      const sprite = n.type === 'input'
+        ? ArtRegistry.images.input
+        : n.type === 'output'
+          ? ArtRegistry.images.output
+          : ArtRegistry.images.gate;
+
+      if (sprite) {
+        ctx.drawImage(sprite, n.x - 22, n.y - 22, 44, 44);
+      } else {
+        ctx.fillStyle = n.type === 'output'
+          ? (isHigh ? '#16a34a' : '#334155')
+          : n.type === 'input'
+            ? (isHigh ? '#0284c7' : '#1e293b')
+            : '#6d28d9';
+        ctx.strokeStyle = isHigh ? '#4ade80' : '#94a3b8';
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 21, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(n.type === 'input' || n.type === 'output' ? String(n.val) : n.label, n.x, n.y + 4);
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(n.label, n.x, n.y - 27);
+    });
+    ctx.textAlign = 'left';
+  }
+
+  function startLoop() {
+    function loop() {
+      pulseOffset += 0.02;
+      draw();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  }
+
+  return { draw, startLoop };
+})();
+
+/* ============================================================================
+   BOOT APPLICATION
+   ============================================================================ */
+OfflineGuard.enforce();
+TeacherHub.init();
+StudentSession.init();
+LevelController.init();
+CanvasView.startLoop();
+</script>
+</body>
+</html>
